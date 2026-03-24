@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Search, SlidersHorizontal, Grid3X3, List, X } from 'lucide-react'
+import { Search, SlidersHorizontal, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -10,33 +10,33 @@ import { Slider } from '@/components/ui/slider'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { ProductCard } from '@/components/product/product-card'
-import { products, formatPrice, categories as productCategories, type Product } from '@/lib/data'
+import { products, categories, subcategories, formatPrice } from '@/lib/data'
 import { cn } from '@/lib/utils'
+import { useParams } from 'next/navigation'
 
-const tags = ['romantic', 'birthday', 'anniversary', 'graduation', 'congratulations', 'formal', 'daily', 'handmade', 'custom', 'premium']
-
-export default function CatalogPage() {
+export default function CategoryPage() {
+  const params = useParams()
+  const slug = params.slug as string
+  
+  const category = categories.find(c => c.slug === slug)
+  const categorySubcategories = subcategories[slug] || []
+  
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([])
   const [priceRange, setPriceRange] = useState([0, 1000000])
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [sortBy, setSortBy] = useState('featured')
   
+  const categoryProducts = products.filter(p => p.category === slug)
+  
   const filteredProducts = useMemo(() => {
-    return products.filter(product => {
+    return categoryProducts.filter(product => {
       // Search
       if (searchQuery && !product.name.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false
       }
       
-      // Category
-      if (selectedCategories.length > 0 && !selectedCategories.includes(product.category)) {
-        return false
-      }
-      
-      // Tags
-      if (selectedTags.length > 0 && !selectedTags.some(tag => product.tags.includes(tag))) {
+      // Subcategory
+      if (selectedSubcategories.length > 0 && !selectedSubcategories.includes(product.subcategory)) {
         return false
       }
       
@@ -60,66 +60,43 @@ export default function CatalogPage() {
           return (b.isBestSeller ? 1 : 0) - (a.isBestSeller ? 1 : 0)
       }
     })
-  }, [searchQuery, selectedCategories, selectedTags, priceRange, sortBy])
+  }, [searchQuery, selectedSubcategories, priceRange, sortBy])
   
-  const toggleCategory = (category: string) => {
-    setSelectedCategories(prev => 
-      prev.includes(category) 
-        ? prev.filter(c => c !== category)
-        : [...prev, category]
-    )
-  }
-  
-  const toggleTag = (tag: string) => {
-    setSelectedTags(prev => 
-      prev.includes(tag) 
-        ? prev.filter(t => t !== tag)
-        : [...prev, tag]
+  const toggleSubcategory = (subcat: string) => {
+    setSelectedSubcategories(prev => 
+      prev.includes(subcat) 
+        ? prev.filter(s => s !== subcat)
+        : [...prev, subcat]
     )
   }
   
   const clearFilters = () => {
     setSearchQuery('')
-    setSelectedCategories([])
-    setSelectedTags([])
+    setSelectedSubcategories([])
     setPriceRange([0, 1000000])
   }
   
-  const hasActiveFilters = searchQuery || selectedCategories.length > 0 || selectedTags.length > 0 || priceRange[0] > 0 || priceRange[1] < 1000000
+  const hasActiveFilters = searchQuery || selectedSubcategories.length > 0 || priceRange[0] > 0 || priceRange[1] < 1000000
   
   const FilterContent = () => (
     <div className="space-y-6">
-      {/* Categories */}
-      <div>
-        <h3 className="mb-3 font-medium">Categories</h3>
-        <div className="space-y-2">
-          {productCategories.map(cat => (
-            <label key={cat.slug} className="flex cursor-pointer items-center gap-2">
-              <Checkbox
-                checked={selectedCategories.includes(cat.slug)}
-                onCheckedChange={() => toggleCategory(cat.slug)}
-              />
-              <span className="text-sm">{cat.name}</span>
-            </label>
-          ))}
+      {/* Subcategories */}
+      {categorySubcategories.length > 0 && (
+        <div>
+          <h3 className="mb-3 font-medium">Subcategories</h3>
+          <div className="space-y-2">
+            {categorySubcategories.map(subcat => (
+              <label key={subcat} className="flex cursor-pointer items-center gap-2">
+                <Checkbox
+                  checked={selectedSubcategories.includes(subcat)}
+                  onCheckedChange={() => toggleSubcategory(subcat)}
+                />
+                <span className="text-sm">{subcat}</span>
+              </label>
+            ))}
+          </div>
         </div>
-      </div>
-      
-      {/* Tags */}
-      <div>
-        <h3 className="mb-3 font-medium">Occasions</h3>
-        <div className="space-y-2">
-          {tags.map(tag => (
-            <label key={tag} className="flex cursor-pointer items-center gap-2">
-              <Checkbox
-                checked={selectedTags.includes(tag)}
-                onCheckedChange={() => toggleTag(tag)}
-              />
-              <span className="text-sm capitalize">{tag.replace('-', ' ')}</span>
-            </label>
-          ))}
-        </div>
-      </div>
+      )}
       
       {/* Price Range */}
       <div>
@@ -147,6 +124,20 @@ export default function CatalogPage() {
     </div>
   )
   
+  if (!category) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <h1 className="font-serif text-3xl font-bold">Category not found</h1>
+          <p className="mt-2 text-muted-foreground">The category you're looking for doesn't exist.</p>
+          <Button asChild className="mt-4">
+            <a href="/catalog">Back to Catalog</a>
+          </Button>
+        </div>
+      </div>
+    )
+  }
+  
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       {/* Header */}
@@ -158,10 +149,10 @@ export default function CatalogPage() {
             className="text-center"
           >
             <h1 className="font-serif text-3xl font-bold md:text-4xl">
-              Our Collection
+              {category.name}
             </h1>
             <p className="mt-2 text-muted-foreground">
-              Discover curated gift bundles for every occasion
+              {category.description}
             </p>
           </motion.div>
         </div>
@@ -218,26 +209,6 @@ export default function CatalogPage() {
               <option value="price-high">Price: High to Low</option>
               <option value="rating">Top Rated</option>
             </select>
-            
-            {/* View Toggle */}
-            <div className="hidden items-center rounded-lg border p-1 md:flex">
-              <Button
-                variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setViewMode('grid')}
-              >
-                <Grid3X3 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setViewMode('list')}
-              >
-                <List className="h-4 w-4" />
-              </Button>
-            </div>
           </div>
         </div>
         
@@ -245,21 +216,10 @@ export default function CatalogPage() {
         {hasActiveFilters && (
           <div className="mb-6 flex flex-wrap items-center gap-2">
             <span className="text-sm text-muted-foreground">Active filters:</span>
-            {selectedCategories.map(cat => {
-              const category = productCategories.find(c => c.slug === cat)
-              return (
-                <Badge key={cat} variant="secondary" className="gap-1">
-                  {category?.name}
-                  <button onClick={() => toggleCategory(cat)}>
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              )
-            })}
-            {selectedTags.map(tag => (
-              <Badge key={tag} variant="secondary" className="gap-1 capitalize">
-                {tag.replace('-', ' ')}
-                <button onClick={() => toggleTag(tag)}>
+            {selectedSubcategories.map(subcat => (
+              <Badge key={subcat} variant="secondary" className="gap-1">
+                {subcat}
+                <button onClick={() => toggleSubcategory(subcat)}>
                   <X className="h-3 w-3" />
                 </button>
               </Badge>
@@ -289,14 +249,9 @@ export default function CatalogPage() {
             {filteredProducts.length > 0 ? (
               <>
                 <p className="mb-4 text-sm text-muted-foreground">
-                  Showing {filteredProducts.length} products
+                  Showing {filteredProducts.length} of {categoryProducts.length} products
                 </p>
-                <div className={cn(
-                  "grid gap-6",
-                  viewMode === 'grid' 
-                    ? "sm:grid-cols-2 xl:grid-cols-3" 
-                    : "grid-cols-1"
-                )}>
+                <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
                   {filteredProducts.map((product, index) => (
                     <motion.div
                       key={product.id}

@@ -22,8 +22,10 @@ export interface CartItem {
 // Builder State
 interface BuilderState {
   currentStep: number
+  selectedBase: string | null  // category slug
   selectedCategory: string | null
   selectedSubcategory: string | null
+  selectedComponents: Array<BuilderItem & { quantity: number }>
   selectedItems: Array<BuilderItem & { quantity: number }>
   selectedPackaging: PackagingOption | null
   message: string
@@ -32,6 +34,7 @@ interface BuilderState {
   setStep: (step: number) => void
   nextStep: () => void
   prevStep: () => void
+  setBase: (base: string) => void
   setCategory: (category: string) => void
   setSubcategory: (subcategory: string) => void
   addItem: (item: BuilderItem) => void
@@ -46,8 +49,10 @@ interface BuilderState {
 
 export const useBuilderStore = create<BuilderState>((set, get) => ({
   currentStep: 1,
+  selectedBase: null,
   selectedCategory: null,
   selectedSubcategory: null,
+  selectedComponents: [],
   selectedItems: [],
   selectedPackaging: null,
   message: '',
@@ -56,6 +61,14 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
   setStep: (step) => set({ currentStep: step }),
   nextStep: () => set((state) => ({ currentStep: Math.min(state.currentStep + 1, 4) })),
   prevStep: () => set((state) => ({ currentStep: Math.max(state.currentStep - 1, 1) })),
+  
+  setBase: (base) => set({ 
+    selectedBase: base,
+    selectedCategory: base,
+    selectedSubcategory: null,
+    selectedComponents: [],
+    selectedItems: []
+  }),
   
   setCategory: (category) => set({ 
     selectedCategory: category,
@@ -69,29 +82,29 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
   }),
   
   addItem: (item) => set((state) => {
-    const existing = state.selectedItems.find(i => i.id === item.id)
+    const existing = state.selectedComponents.find(i => i.id === item.id)
     if (existing) {
       return {
-        selectedItems: state.selectedItems.map(i =>
+        selectedComponents: state.selectedComponents.map(i =>
           i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
         )
       }
     }
     return {
-      selectedItems: [...state.selectedItems, { ...item, quantity: 1 }]
+      selectedComponents: [...state.selectedComponents, { ...item, quantity: 1 }]
     }
   }),
   
   removeItem: (itemId) => set((state) => ({
-    selectedItems: state.selectedItems.filter(i => i.id !== itemId)
+    selectedComponents: state.selectedComponents.filter(i => i.id !== itemId)
   })),
   
   updateItemQuantity: (itemId, quantity) => set((state) => {
     if (quantity <= 0) {
-      return { selectedItems: state.selectedItems.filter(i => i.id !== itemId) }
+      return { selectedComponents: state.selectedComponents.filter(i => i.id !== itemId) }
     }
     return {
-      selectedItems: state.selectedItems.map(i =>
+      selectedComponents: state.selectedComponents.map(i =>
         i.id === itemId ? { ...i, quantity } : i
       )
     }
@@ -103,7 +116,7 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
   
   getTotalPrice: () => {
     const state = get()
-    const itemsPrice = state.selectedItems.reduce(
+    const itemsPrice = state.selectedComponents.reduce(
       (total, item) => total + item.price * item.quantity, 0
     )
     const packagingPrice = state.selectedPackaging?.price || 0
@@ -112,8 +125,10 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
   
   reset: () => set({
     currentStep: 1,
+    selectedBase: null,
     selectedCategory: null,
     selectedSubcategory: null,
+    selectedComponents: [],
     selectedItems: [],
     selectedPackaging: null,
     message: '',
