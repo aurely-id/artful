@@ -75,7 +75,7 @@ export default function CheckoutPage() {
     
     toast.success('Order placed successfully!')
     clearCart()
-    router.push('/order-success')
+    router.push('/dashboard')
     
     setIsSubmitting(false)
   }

@@ -10,14 +10,15 @@ import { Slider } from '@/components/ui/slider'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { ProductCard } from '@/components/product/product-card'
-import { products, formatPrice, categories as productCategories, type Product } from '@/lib/data'
+import { products, formatPrice } from '@/lib/data'
 import { cn } from '@/lib/utils'
 
-const tags = ['romantic', 'birthday', 'anniversary', 'graduation', 'congratulations', 'formal', 'daily', 'handmade', 'custom', 'premium']
+const categories = ['All', 'Flowers', 'Snacks', 'Special', 'Wellness', 'Comfort']
+const tags = ['birthday', 'anniversary', 'graduation', 'thank-you', 'romantic', 'get-well', 'congratulations']
 
 export default function CatalogPage() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [selectedCategory, setSelectedCategory] = useState('All')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [priceRange, setPriceRange] = useState([0, 1000000])
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -31,7 +32,7 @@ export default function CatalogPage() {
       }
       
       // Category
-      if (selectedCategories.length > 0 && !selectedCategories.includes(product.category)) {
+      if (selectedCategory !== 'All' && product.category !== selectedCategory) {
         return false
       }
       
@@ -55,20 +56,12 @@ export default function CatalogPage() {
         case 'rating':
           return b.rating - a.rating
         case 'newest':
-          return (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0)
+          return a.badge === 'New' ? -1 : 1
         default:
-          return (b.isBestSeller ? 1 : 0) - (a.isBestSeller ? 1 : 0)
+          return a.badge === 'Best Seller' ? -1 : 1
       }
     })
-  }, [searchQuery, selectedCategories, selectedTags, priceRange, sortBy])
-  
-  const toggleCategory = (category: string) => {
-    setSelectedCategories(prev => 
-      prev.includes(category) 
-        ? prev.filter(c => c !== category)
-        : [...prev, category]
-    )
-  }
+  }, [searchQuery, selectedCategory, selectedTags, priceRange, sortBy])
   
   const toggleTag = (tag: string) => {
     setSelectedTags(prev => 
@@ -80,27 +73,29 @@ export default function CatalogPage() {
   
   const clearFilters = () => {
     setSearchQuery('')
-    setSelectedCategories([])
+    setSelectedCategory('All')
     setSelectedTags([])
     setPriceRange([0, 1000000])
   }
   
-  const hasActiveFilters = searchQuery || selectedCategories.length > 0 || selectedTags.length > 0 || priceRange[0] > 0 || priceRange[1] < 1000000
+  const hasActiveFilters = searchQuery || selectedCategory !== 'All' || selectedTags.length > 0 || priceRange[0] > 0 || priceRange[1] < 1000000
   
   const FilterContent = () => (
     <div className="space-y-6">
       {/* Categories */}
       <div>
         <h3 className="mb-3 font-medium">Categories</h3>
-        <div className="space-y-2">
-          {productCategories.map(cat => (
-            <label key={cat.slug} className="flex cursor-pointer items-center gap-2">
-              <Checkbox
-                checked={selectedCategories.includes(cat.slug)}
-                onCheckedChange={() => toggleCategory(cat.slug)}
-              />
-              <span className="text-sm">{cat.name}</span>
-            </label>
+        <div className="flex flex-wrap gap-2">
+          {categories.map(cat => (
+            <Button
+              key={cat}
+              variant={selectedCategory === cat ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedCategory(cat)}
+              className="rounded-full"
+            >
+              {cat}
+            </Button>
           ))}
         </div>
       </div>
@@ -245,17 +240,14 @@ export default function CatalogPage() {
         {hasActiveFilters && (
           <div className="mb-6 flex flex-wrap items-center gap-2">
             <span className="text-sm text-muted-foreground">Active filters:</span>
-            {selectedCategories.map(cat => {
-              const category = productCategories.find(c => c.slug === cat)
-              return (
-                <Badge key={cat} variant="secondary" className="gap-1">
-                  {category?.name}
-                  <button onClick={() => toggleCategory(cat)}>
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              )
-            })}
+            {selectedCategory !== 'All' && (
+              <Badge variant="secondary" className="gap-1">
+                {selectedCategory}
+                <button onClick={() => setSelectedCategory('All')}>
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
             {selectedTags.map(tag => (
               <Badge key={tag} variant="secondary" className="gap-1 capitalize">
                 {tag.replace('-', ' ')}

@@ -821,7 +821,3 @@ export function getBuilderItemsByCategory(categorySlug: string): BuilderItem[] {
 export function getBuilderItemsBySubcategory(subcategory: string): BuilderItem[] {
   return builderItems.filter(item => item.subcategory === subcategory)
 }
-
-export function getProductById(id: string): Product | undefined {
-  return products.find(p => p.id === Number(id))
-}

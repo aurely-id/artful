@@ -122,28 +122,4 @@
   body {
     @apply bg-background text-foreground;
   }
-  
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-sans;
-  }
-}
-
-@layer utilities {
-  .animate-glow {
-    @apply animate-pulse shadow-lg shadow-primary/50;
-  }
-  
-  .text-balance {
-    text-wrap: balance;
-  }
-  
-  .text-pretty {
-    text-wrap: pretty;
-  }
-  
-  .sr-only {
-    @apply absolute -inset-1.5 size-px overflow-hidden border-0 p-0 [-webkit-clip-path:inset(50%)];
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
 }

@@ -17,21 +17,29 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, className }: ProductCardProps) {
-  const addProduct = useCartStore((state) => state.addProduct)
+  const addItem = useCartStore((state) => state.addItem)
   
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     
-    addProduct(product, 1)
+    const cartItem: CartItem = {
+      id: product.id,
+      type: 'premade',
+      name: product.name,
+      components: [],
+      totalPrice: product.price,
+      quantity: 1,
+      image: product.image
+    }
+    
+    addItem(cartItem)
     toast.success(`${product.name} added to cart!`)
   }
   
-  const isBestSeller = product.isBestSeller
-  const isNew = product.isNew
-  const badgeVariant = isBestSeller 
+  const badgeVariant = product.badge === 'Best Seller' 
     ? 'default' 
-    : isNew 
+    : product.badge === 'New' 
       ? 'secondary' 
       : 'outline'
   
@@ -52,12 +60,12 @@ export function ProductCard({ product, className }: ProductCardProps) {
           </div>
           
           {/* Badge */}
-          {(isBestSeller || isNew) && (
+          {product.badge && (
             <Badge 
               variant={badgeVariant}
               className="absolute left-3 top-3 z-10"
             >
-              {isBestSeller ? 'Best Seller' : 'New'}
+              {product.badge}
             </Badge>
           )}
           
@@ -100,7 +108,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
               ))}
             </div>
             <span className="text-xs text-muted-foreground">
-              ({product.reviews ?? 0})
+              ({product.reviews})
             </span>
           </div>
           

@@ -22,7 +22,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ProductCard } from '@/components/product/product-card'
 import { products, getProductById, formatPrice } from '@/lib/data'
-import { useCartStore, useWishlistStore } from '@/lib/store'
+import { useCartStore, type CartItem } from '@/lib/store'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
@@ -35,9 +35,8 @@ export default function ProductPage({ params }: ProductPageProps) {
   const router = useRouter()
   const product = getProductById(id)
   const [quantity, setQuantity] = useState(1)
-  const addProduct = useCartStore((state) => state.addProduct)
-  const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore()
-  const isWishlisted = product ? isInWishlist(product.id) : false
+  const [isWishlisted, setIsWishlisted] = useState(false)
+  const addToCart = useCartStore((state) => state.addItem)
   
   if (!product) {
     notFound()
@@ -48,18 +47,18 @@ export default function ProductPage({ params }: ProductPageProps) {
     .slice(0, 4)
   
   const handleAddToCart = () => {
-    addProduct(product, quantity)
-    toast.success(`${product.name} added to cart!`)
-  }
-  
-  const handleWishlist = () => {
-    if (isWishlisted) {
-      removeFromWishlist(product.id)
-      toast.success('Removed from wishlist')
-    } else {
-      addToWishlist(product)
-      toast.success('Added to wishlist!')
+    const cartItem: CartItem = {
+      id: product.id,
+      type: 'premade',
+      name: product.name,
+      components: [],
+      totalPrice: product.price,
+      quantity,
+      image: product.image
     }
+    
+    addToCart(cartItem)
+    toast.success(`${product.name} added to cart!`)
   }
   
   const handleCustomize = () => {
@@ -96,12 +95,12 @@ export default function ProductPage({ params }: ProductPageProps) {
                   <Sparkles className="h-24 w-24 text-primary/20" />
                 </div>
                 
-                {(product.isBestSeller || product.isNew) && (
+                {product.badge && (
                   <Badge 
                     className="absolute left-4 top-4"
-                    variant={product.isBestSeller ? 'default' : 'secondary'}
+                    variant={product.badge === 'Best Seller' ? 'default' : 'secondary'}
                   >
-                    {product.isBestSeller ? 'Best Seller' : 'New'}
+                    {product.badge}
                   </Badge>
                 )}
               </div>
@@ -147,7 +146,7 @@ export default function ProductPage({ params }: ProductPageProps) {
                     ))}
                   </div>
                   <span className="text-sm text-muted-foreground">
-                    ({product.reviews ?? 0} reviews)
+                    ({product.reviews} reviews)
                   </span>
                 </div>
                 
@@ -239,7 +238,10 @@ export default function ProductPage({ params }: ProductPageProps) {
                     "transition-colors",
                     isWishlisted && "border-rose text-rose"
                   )}
-                  onClick={handleWishlist}
+                  onClick={() => {
+                    setIsWishlisted(!isWishlisted)
+                    toast.success(isWishlisted ? 'Removed from wishlist' : 'Added to wishlist!')
+                  }}
                 >
                   <Heart className={cn("h-5 w-5", isWishlisted && "fill-current")} />
                 </Button>

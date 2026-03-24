@@ -4,12 +4,14 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { 
   Package, 
+  Mail, 
   Sparkles, 
+  Heart, 
   ShoppingBag,
   Check
 } from 'lucide-react'
-import { useBuilderStore, useCartStore } from '@/lib/store'
-import { formatPrice, categories } from '@/lib/data'
+import { useBuilderStore, useCartStore, useSavedDesignsStore, type CartItem } from '@/lib/store'
+import { formatPrice } from '@/lib/data'
 import { MagicButton } from '@/components/ui/magic-button'
 import { toast } from 'sonner'
 
@@ -19,34 +21,53 @@ export function StepPreview() {
     selectedBase, 
     selectedComponents, 
     message, 
+    envelopeStyle, 
     getTotalPrice,
     reset 
   } = useBuilderStore()
   const addToCart = useCartStore((state) => state.addItem)
-  
-  const baseInfo = categories.find(c => c.slug === selectedBase)
+  const addDesign = useSavedDesignsStore((state) => state.addDesign)
   
   const handleAddToCart = () => {
     if (!selectedBase) {
-      toast.error('Please select a category first')
+      toast.error('Please select a base first')
       return
     }
     
-    const cartItem = {
+    const cartItem: CartItem = {
       id: `custom-${Date.now()}`,
-      type: 'custom' as const,
-      name: `Custom ${baseInfo?.name || 'Gift Box'}`,
-      selectedBase,
-      selectedComponents,
+      type: 'custom',
+      name: `Custom ${selectedBase.name}`,
+      base: selectedBase,
+      components: selectedComponents,
       message,
+      envelopeStyle: envelopeStyle || undefined,
       totalPrice: getTotalPrice(),
       quantity: 1
     }
     
-    addToCart(cartItem as any)
+    addToCart(cartItem)
     toast.success('Added to cart!')
     reset()
     router.push('/cart')
+  }
+  
+  const handleSaveDesign = () => {
+    if (!selectedBase) {
+      toast.error('Please select a base first')
+      return
+    }
+    
+    addDesign({
+      name: `Custom ${selectedBase.name}`,
+      base: selectedBase,
+      components: selectedComponents,
+      message,
+      envelopeStyle: envelopeStyle || undefined,
+      totalPrice: getTotalPrice()
+    })
+    
+    toast.success('Design saved to your wishlist!')
   }
   
   return (
@@ -81,10 +102,10 @@ export function StepPreview() {
             </div>
             <div>
               <h3 className="font-serif text-xl font-semibold">
-                {baseInfo?.name || 'Your Custom Gift'}
+                {selectedBase?.name || 'Your Custom Gift'}
               </h3>
               <p className="text-sm text-muted-foreground">
-                {baseInfo?.count} items available
+                {selectedBase?.size}
               </p>
             </div>
           </div>
@@ -92,10 +113,10 @@ export function StepPreview() {
         
         {/* Content */}
         <div className="divide-y p-6">
-          {/* Category */}
+          {/* Base */}
           <div className="pb-4">
             <h4 className="mb-3 text-sm font-medium uppercase tracking-wide text-muted-foreground">
-              Category
+              Base Package
             </h4>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -103,10 +124,13 @@ export function StepPreview() {
                   <Package className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="font-medium">{baseInfo?.name}</p>
-                  <p className="text-xs text-muted-foreground">{baseInfo?.description}</p>
+                  <p className="font-medium">{selectedBase?.name}</p>
+                  <p className="text-xs text-muted-foreground">{selectedBase?.description}</p>
                 </div>
               </div>
+              <p className="font-serif font-semibold">
+                {selectedBase ? formatPrice(selectedBase.price) : '-'}
+              </p>
             </div>
           </div>
           
@@ -143,6 +167,12 @@ export function StepPreview() {
                 Personal Message
               </h4>
               <div className="rounded-lg bg-muted/50 p-4">
+                <div className="mb-2 flex items-center gap-2 text-primary">
+                  <Mail className="h-4 w-4" />
+                  <span className="text-xs font-medium">
+                    {envelopeStyle?.name || 'Standard'} Envelope
+                  </span>
+                </div>
                 <p className="whitespace-pre-wrap font-serif italic text-foreground">
                   {`"${message}"`}
                 </p>
@@ -164,6 +194,15 @@ export function StepPreview() {
       
       {/* Actions */}
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+        <MagicButton
+          variant="outline"
+          size="lg"
+          onClick={handleSaveDesign}
+          className="sm:w-auto"
+        >
+          <Heart className="h-4 w-4" />
+          Save to Wishlist
+        </MagicButton>
         <MagicButton
           size="lg"
           onClick={handleAddToCart}
