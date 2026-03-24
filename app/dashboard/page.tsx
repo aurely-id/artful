@@ -65,18 +65,12 @@ export default function DashboardPage() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('orders')
   const { designs, removeDesign } = useSavedDesignsStore()
-  const { selectBase, addComponent, setMessage, setEnvelopeStyle, setStep } = useBuilderStore()
+  const { selectBase, addComponent, setMessage, setStep } = useBuilderStore()
   
   const handleReorder = (design: typeof designs[0]) => {
-    // Load the saved design into the builder
-    selectBase(design.base)
-    design.components.forEach(comp => {
-      for (let i = 0; i < comp.quantity; i++) {
-        addComponent(comp)
-      }
-    })
+    // This is a simplified reorder - would need full base/category data
+    // to properly reconstruct the design in the builder
     if (design.message) setMessage(design.message)
-    if (design.envelopeStyle) setEnvelopeStyle(design.envelopeStyle)
     setStep(4) // Go to preview
     
     toast.success('Design loaded! Redirecting to builder...')

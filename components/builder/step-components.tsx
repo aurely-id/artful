@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Minus, Trash2, Sparkles, Package } from 'lucide-react'
 import { useBuilderStore } from '@/lib/store'
-import { components, formatPrice, getComponentsByCategory, type Component } from '@/lib/data'
+import { builderItems, formatPrice, getComponentsByCategory, type BuilderItem } from '@/lib/data'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -18,7 +18,7 @@ const categories = [
 ] as const
 
 export function StepComponents() {
-  const [activeCategory, setActiveCategory] = useState<Component['category']>('flowers')
+  const [activeCategory, setActiveCategory] = useState<BuilderItem['category']>('flowers')
   const { 
     selectedBase, 
     selectedComponents, 

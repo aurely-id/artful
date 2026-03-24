@@ -20,13 +20,14 @@ export function StepPreview() {
   const { 
     selectedBase, 
     selectedComponents, 
+    selectedPackaging,
     message, 
-    envelopeStyle, 
+    uploadedPhoto,
     getTotalPrice,
     reset 
   } = useBuilderStore()
   const addToCart = useCartStore((state) => state.addItem)
-  const addDesign = useSavedDesignsStore((state) => state.addDesign)
+  const saveDesign = useSavedDesignsStore((state) => state.saveDesign)
   
   const handleAddToCart = () => {
     if (!selectedBase) {
@@ -37,11 +38,14 @@ export function StepPreview() {
     const cartItem: CartItem = {
       id: `custom-${Date.now()}`,
       type: 'custom',
-      name: `Custom ${selectedBase.name}`,
-      base: selectedBase,
-      components: selectedComponents,
-      message,
-      envelopeStyle: envelopeStyle || undefined,
+      customBuild: {
+        categorySlug: selectedBase.category,
+        subcategory: selectedBase.subcategory,
+        items: selectedComponents,
+        packaging: selectedPackaging || { id: 'default', name: 'Standard', price: 0, image: '', description: '' },
+        message,
+        uploadedPhoto: uploadedPhoto || undefined
+      },
       totalPrice: getTotalPrice(),
       quantity: 1
     }
@@ -60,10 +64,12 @@ export function StepPreview() {
     
     addDesign({
       name: `Custom ${selectedBase.name}`,
-      base: selectedBase,
-      components: selectedComponents,
+      categorySlug: selectedBase.category,
+      subcategory: selectedBase.subcategory,
+      items: selectedComponents,
+      packaging: selectedPackaging || { id: 'default', name: 'Standard', price: 0, image: '', description: '' },
       message,
-      envelopeStyle: envelopeStyle || undefined,
+      uploadedPhoto: uploadedPhoto || undefined,
       totalPrice: getTotalPrice()
     })
     
@@ -170,7 +176,7 @@ export function StepPreview() {
                 <div className="mb-2 flex items-center gap-2 text-primary">
                   <Mail className="h-4 w-4" />
                   <span className="text-xs font-medium">
-                    {envelopeStyle?.name || 'Standard'} Envelope
+                    Personal Message
                   </span>
                 </div>
                 <p className="whitespace-pre-wrap font-serif italic text-foreground">

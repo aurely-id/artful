@@ -24,24 +24,28 @@ export function ProductCard({ product, className }: ProductCardProps) {
     e.stopPropagation()
     
     const cartItem: CartItem = {
-      id: product.id,
-      type: 'premade',
-      name: product.name,
-      components: [],
+      id: `product-${product.id}-${Date.now()}`,
+      type: 'product',
+      product,
       totalPrice: product.price,
-      quantity: 1,
-      image: product.image
+      quantity: 1
     }
     
     addItem(cartItem)
     toast.success(`${product.name} added to cart!`)
   }
   
-  const badgeVariant = product.badge === 'Best Seller' 
-    ? 'default' 
-    : product.badge === 'New' 
-      ? 'secondary' 
-      : 'outline'
+  const getBadgeInfo = () => {
+    if (product.isBestSeller) {
+      return { text: 'Best Seller', variant: 'default' as const }
+    }
+    if (product.isNew) {
+      return { text: 'New', variant: 'secondary' as const }
+    }
+    return null
+  }
+  
+  const badgeInfo = getBadgeInfo()
   
   return (
     <motion.div
@@ -60,12 +64,12 @@ export function ProductCard({ product, className }: ProductCardProps) {
           </div>
           
           {/* Badge */}
-          {product.badge && (
+          {badgeInfo && (
             <Badge 
-              variant={badgeVariant}
+              variant={badgeInfo.variant}
               className="absolute left-3 top-3 z-10"
             >
-              {product.badge}
+              {badgeInfo.text}
             </Badge>
           )}
           

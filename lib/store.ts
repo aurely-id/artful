@@ -1,11 +1,11 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Product, BuilderItem, PackagingOption } from './data'
+import type { Product, BuilderItem, PackagingOption, Base, EnvelopeStyle } from './data'
 
 // Cart Item type
 export interface CartItem {
   id: string
-  type: 'product' | 'custom'
+  type: 'product' | 'custom' | 'premade'
   product?: Product
   customBuild?: {
     categorySlug: string
@@ -17,28 +17,31 @@ export interface CartItem {
   }
   quantity: number
   totalPrice: number
+  name?: string
+  components?: any[]
+  image?: string
 }
 
 // Builder State
 interface BuilderState {
   currentStep: number
-  selectedCategory: string | null
-  selectedSubcategory: string | null
-  selectedItems: Array<BuilderItem & { quantity: number }>
+  selectedBase: Base | null
+  selectedComponents: Array<BuilderItem & { quantity: number }>
   selectedPackaging: PackagingOption | null
   message: string
+  envelopeStyle: EnvelopeStyle | null
   uploadedPhoto: string | null
   
   setStep: (step: number) => void
   nextStep: () => void
   prevStep: () => void
-  setCategory: (category: string) => void
-  setSubcategory: (subcategory: string) => void
-  addItem: (item: BuilderItem) => void
-  removeItem: (itemId: string) => void
-  updateItemQuantity: (itemId: string, quantity: number) => void
+  selectBase: (base: Base) => void
+  addComponent: (component: BuilderItem) => void
+  removeComponent: (componentId: string) => void
+  updateComponentQuantity: (componentId: string, quantity: number) => void
   setPackaging: (packaging: PackagingOption) => void
   setMessage: (message: string) => void
+  setEnvelopeStyle: (style: EnvelopeStyle | null) => void
   setUploadedPhoto: (photo: string | null) => void
   getTotalPrice: () => number
   reset: () => void
@@ -46,77 +49,72 @@ interface BuilderState {
 
 export const useBuilderStore = create<BuilderState>((set, get) => ({
   currentStep: 1,
-  selectedCategory: null,
-  selectedSubcategory: null,
-  selectedItems: [],
+  selectedBase: null,
+  selectedComponents: [],
   selectedPackaging: null,
   message: '',
+  envelopeStyle: null,
   uploadedPhoto: null,
   
   setStep: (step) => set({ currentStep: step }),
   nextStep: () => set((state) => ({ currentStep: Math.min(state.currentStep + 1, 4) })),
   prevStep: () => set((state) => ({ currentStep: Math.max(state.currentStep - 1, 1) })),
   
-  setCategory: (category) => set({ 
-    selectedCategory: category,
-    selectedSubcategory: null,
-    selectedItems: []
+  selectBase: (base) => set({ 
+    selectedBase: base
   }),
   
-  setSubcategory: (subcategory) => set({ 
-    selectedSubcategory: subcategory,
-    selectedItems: []
-  }),
-  
-  addItem: (item) => set((state) => {
-    const existing = state.selectedItems.find(i => i.id === item.id)
+  addComponent: (component) => set((state) => {
+    const existing = state.selectedComponents.find(c => c.id === component.id)
     if (existing) {
       return {
-        selectedItems: state.selectedItems.map(i =>
-          i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
+        selectedComponents: state.selectedComponents.map(c =>
+          c.id === component.id ? { ...c, quantity: c.quantity + 1 } : c
         )
       }
     }
     return {
-      selectedItems: [...state.selectedItems, { ...item, quantity: 1 }]
+      selectedComponents: [...state.selectedComponents, { ...component, quantity: 1 }]
     }
   }),
   
-  removeItem: (itemId) => set((state) => ({
-    selectedItems: state.selectedItems.filter(i => i.id !== itemId)
+  removeComponent: (componentId) => set((state) => ({
+    selectedComponents: state.selectedComponents.filter(c => c.id !== componentId)
   })),
   
-  updateItemQuantity: (itemId, quantity) => set((state) => {
+  updateComponentQuantity: (componentId, quantity) => set((state) => {
     if (quantity <= 0) {
-      return { selectedItems: state.selectedItems.filter(i => i.id !== itemId) }
+      return { selectedComponents: state.selectedComponents.filter(c => c.id !== componentId) }
     }
     return {
-      selectedItems: state.selectedItems.map(i =>
-        i.id === itemId ? { ...i, quantity } : i
+      selectedComponents: state.selectedComponents.map(c =>
+        c.id === componentId ? { ...c, quantity } : c
       )
     }
   }),
   
   setPackaging: (packaging) => set({ selectedPackaging: packaging }),
   setMessage: (message) => set({ message }),
+  setEnvelopeStyle: (style) => set({ envelopeStyle: style }),
   setUploadedPhoto: (photo) => set({ uploadedPhoto: photo }),
   
   getTotalPrice: () => {
     const state = get()
-    const itemsPrice = state.selectedItems.reduce(
-      (total, item) => total + item.price * item.quantity, 0
+    const basePrice = state.selectedBase?.price || 0
+    const componentsPrice = state.selectedComponents.reduce(
+      (total, component) => total + component.price * component.quantity, 0
     )
     const packagingPrice = state.selectedPackaging?.price || 0
-    return itemsPrice + packagingPrice
+    return basePrice + componentsPrice + packagingPrice
   },
   
   reset: () => set({
     currentStep: 1,
-    selectedCategory: null,
-    selectedSubcategory: null,
-    selectedItems: [],
+    selectedBase: null,
+    selectedComponents: [],
     selectedPackaging: null,
     message: '',
+    envelopeStyle: null,
     uploadedPhoto: null
   })
 }))
@@ -124,6 +122,7 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
 // Cart Store
 interface CartState {
   items: CartItem[]
+  addItem: (item: CartItem) => void
   addProduct: (product: Product, quantity?: number) => void
   addCustomBuild: (build: CartItem['customBuild'], totalPrice: number) => void
   removeItem: (itemId: string) => void
@@ -137,6 +136,18 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
+      
+      addItem: (item) => set((state) => {
+        const existingIndex = state.items.findIndex(i => i.id === item.id)
+        if (existingIndex > -1) {
+          const newItems = [...state.items]
+          newItems[existingIndex].quantity += item.quantity
+          return { items: newItems }
+        }
+        return {
+          items: [...state.items, item]
+        }
+      }),
       
       addProduct: (product, quantity = 1) => set((state) => {
         const existingIndex = state.items.findIndex(

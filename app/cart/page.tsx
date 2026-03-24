@@ -117,7 +117,11 @@ export default function CartPage() {
                         <div>
                           <div className="flex items-start justify-between gap-2">
                             <div>
-                              <h3 className="font-serif font-semibold">{item.name}</h3>
+                              <h3 className="font-serif font-semibold">
+                                {item.type === 'product' ? item.product?.name : 
+                                 item.customBuild ? `Custom ${item.customBuild.subcategory}` : 
+                                 'Custom Creation'}
+                              </h3>
                               <p className="text-sm text-muted-foreground capitalize">
                                 {item.type === 'custom' ? 'Custom Creation' : 'Pre-made Bundle'}
                               </p>
@@ -133,9 +137,9 @@ export default function CartPage() {
                           </div>
                           
                           {/* Custom item details */}
-                          {item.type === 'custom' && item.components.length > 0 && (
+                          {item.type === 'custom' && item.customBuild && item.customBuild.items.length > 0 && (
                             <div className="mt-2 flex flex-wrap gap-1">
-                              {item.components.slice(0, 3).map(comp => (
+                              {item.customBuild.items.slice(0, 3).map(comp => (
                                 <span 
                                   key={comp.id}
                                   className="rounded-full bg-muted px-2 py-0.5 text-xs"
@@ -143,9 +147,9 @@ export default function CartPage() {
                                   {comp.name}
                                 </span>
                               ))}
-                              {item.components.length > 3 && (
+                              {item.customBuild.items.length > 3 && (
                                 <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
-                                  +{item.components.length - 3} more
+                                  +{item.customBuild.items.length - 3} more
                                 </span>
                               )}
                             </div>

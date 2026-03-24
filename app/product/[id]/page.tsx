@@ -33,10 +33,11 @@ interface ProductPageProps {
 export default function ProductPage({ params }: ProductPageProps) {
   const { id } = use(params)
   const router = useRouter()
-  const product = getProductById(id)
+  const parsedId = parseInt(id)
+  const product = getProductById(parsedId)
   const [quantity, setQuantity] = useState(1)
   const [isWishlisted, setIsWishlisted] = useState(false)
-  const addToCart = useCartStore((state) => state.addItem)
+  const addItem = useCartStore((state) => state.addItem)
   
   if (!product) {
     notFound()
@@ -48,16 +49,14 @@ export default function ProductPage({ params }: ProductPageProps) {
   
   const handleAddToCart = () => {
     const cartItem: CartItem = {
-      id: product.id,
-      type: 'premade',
-      name: product.name,
-      components: [],
-      totalPrice: product.price,
-      quantity,
-      image: product.image
+      id: `product-${product.id}-${Date.now()}`,
+      type: 'product',
+      product,
+      totalPrice: product.price * quantity,
+      quantity
     }
     
-    addToCart(cartItem)
+    addItem(cartItem)
     toast.success(`${product.name} added to cart!`)
   }
   
@@ -95,12 +94,12 @@ export default function ProductPage({ params }: ProductPageProps) {
                   <Sparkles className="h-24 w-24 text-primary/20" />
                 </div>
                 
-                {product.badge && (
+                {(product.isBestSeller || product.isNew) && (
                   <Badge 
                     className="absolute left-4 top-4"
-                    variant={product.badge === 'Best Seller' ? 'default' : 'secondary'}
+                    variant={product.isBestSeller ? 'default' : 'secondary'}
                   >
-                    {product.badge}
+                    {product.isBestSeller ? 'Best Seller' : 'New'}
                   </Badge>
                 )}
               </div>

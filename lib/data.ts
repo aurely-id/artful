@@ -717,6 +717,81 @@ export const stories: Story[] = [
   }
 ]
 
+// Base options for custom builder
+export interface Base {
+  id: string
+  name: string
+  description: string
+  category: string
+  subcategory: string
+  price: number
+  image: string
+  size: string
+}
+
+export const bases: Base[] = [
+  {
+    id: 'base-1',
+    name: 'Standard Gift Box',
+    description: 'Kotak hadiah standar yang cocok untuk berbagai items',
+    category: 'gift-crate',
+    subcategory: 'Buket',
+    price: 25000,
+    image: '/images/bases/standard-box.jpg',
+    size: 'Medium'
+  },
+  {
+    id: 'base-2',
+    name: 'Premium Gift Box',
+    description: 'Kotak hadiah premium dengan desain eksklusif',
+    category: 'gift-crate',
+    subcategory: 'Buket',
+    price: 50000,
+    image: '/images/bases/premium-box.jpg',
+    size: 'Large'
+  },
+  {
+    id: 'base-3',
+    name: 'Hampers Basket',
+    description: 'Keranjang hampers dengan handle yang cantik',
+    category: 'gift-crate',
+    subcategory: 'Hampers/Hantaran',
+    price: 75000,
+    image: '/images/bases/hampers.jpg',
+    size: 'Extra Large'
+  },
+  {
+    id: 'base-4',
+    name: 'Frame Box',
+    description: 'Kotak khusus untuk kombinasi frame dan dekorasi',
+    category: 'gift-crate',
+    subcategory: 'Frame',
+    price: 35000,
+    image: '/images/bases/frame-box.jpg',
+    size: 'Medium'
+  },
+  {
+    id: 'base-5',
+    name: 'Snack Box',
+    description: 'Kotak khusus untuk snack dan makanan',
+    category: 'cooking-snack',
+    subcategory: 'Brownies Kukus',
+    price: 30000,
+    image: '/images/bases/snack-box.jpg',
+    size: 'Medium'
+  },
+  {
+    id: 'base-6',
+    name: 'Fashion Gift Bag',
+    description: 'Tas hadiah untuk fashion items dan accessories',
+    category: 'accessory-fashion',
+    subcategory: 'Tas Tote Bag',
+    price: 20000,
+    image: '/images/bases/fashion-bag.jpg',
+    size: 'Small'
+  }
+]
+
 // Builder Components for Custom Builder
 export interface BuilderItem {
   id: string
@@ -771,6 +846,20 @@ export const packagingOptions: PackagingOption[] = [
   { id: 'pkg-3', name: 'Hampers Basket', price: 75000, image: '/images/packaging/hampers.jpg', description: 'Keranjang hampers dengan handle' }
 ]
 
+// Envelope styles for messages
+export interface EnvelopeStyle {
+  id: string
+  name: string
+  color: string
+  icon: string
+}
+
+export const envelopeStyles: EnvelopeStyle[] = [
+  { id: 'env-1', name: 'Romantic', color: '#E8C4C4', icon: '💗' },
+  { id: 'env-2', name: 'Classic', color: '#FDF8F0', icon: '📮' },
+  { id: 'env-3', name: 'Magical', color: '#C5B4E3', icon: '✨' }
+]
+
 // Helper functions
 export function formatPrice(price: number): string {
   return new Intl.NumberFormat('id-ID', {
@@ -816,6 +905,19 @@ export function searchProducts(query: string): Product[] {
 
 export function getBuilderItemsByCategory(categorySlug: string): BuilderItem[] {
   return builderItems.filter(item => item.category === categorySlug)
+}
+
+export function getComponentsByCategory(category: string): BuilderItem[] {
+  // Map category names to builder categories
+  const categoryMap: Record<string, string> = {
+    'flowers': 'gift-crate',
+    'snacks': 'cooking-snack',
+    'photos': 'gift-crate',
+    'accessories': 'accessory-fashion'
+  }
+  
+  const builderCategory = categoryMap[category] || category
+  return builderItems.filter(item => item.category === builderCategory)
 }
 
 export function getBuilderItemsBySubcategory(subcategory: string): BuilderItem[] {
